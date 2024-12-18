@@ -1,94 +1,1753 @@
 {
   "openapi": "3.0.1",
   "info": {
-    "title": "OpenAPI Plant Store",
-    "description": "A sample API that uses a plant store as an example to demonstrate features in the OpenAPI specification",
-    "license": {
-      "name": "MIT"
-    },
-    "version": "1.0.0"
+    "title": "📘 ClickConnector API Specification",
+    "version": "1.0.0",
+    "description": "\nWelcome to the API specification for ClickConnector App! This document outlines the various endpoints available, adhering to Open API Standards. You can utilize this spec directly with Open API libraries, and SDKs are available for Node, PHP, Python, and Java environments. For more details, visit [Swagger Codegen](https://swagger.io/tools/swagger-codegen/).\n\nClickConnector HTTP endpoints are RESTful and operate with JSON for both requests and responses.\n\n---\n\n## 🌐 API Base Path\n\n`https://engine.clickconnector.app/api/v1`\n\n---\n\n## 🔐 Authentication\n\nTo access the API, you need an API Access Token. Log in to the ClickConnector Portal, then navigate to Workspace Settings > Apps and Integrations > API Access Token to create a new API Access Token\n\n- **Token Type:** JWT\n- **HTTP Header:** `authorization`\n- **Value Format:** `Bearer ${token}`\n\n☝️ **Keep your API Access Token confidential at all times.**\n\n---\n\n## ⏱️ Rate Limit\n\n- **Limit:** 100 calls per 15 minutes.\n- **Exceeded Your Limit?** Contact [support@clickconnector.com](mailto:support@clickconnector.com) if you exceed the rate limit.\n\n**Rate Limit Response Body:**\n\n```json\n{\n  \"statusCode\": 429,\n  \"statusText\": \"Too Many Requests\",\n  \"data\": {\n    \"message\": \"Too many requests, please try again later.\"\n  }\n}\n```\n\n---\n\n## 🔍 Query API Calls\n\nAll Query API calls are made using the POST method. You need to send a Query Request Object in the JSON body of your requests. ClickConnector is fully compatible with the Mongo Query Language. Learn more about Mongo Query Language [here](https://www.mongodb.com/docs/manual/tutorial/query-documents/).\n\n### Request Format\n\n```typescript\ninterface iQueryRequest {\n  query: any;\n  options: {\n    sort?: string;\n    page?: number;\n    limit?: number;\n  };\n}\n\nconst ExampleQuery = {\n  query: {}, // Query OBJECT,\n  options: {\n    page: 1,\n    limit: 20, // Number\n    sort: \"metaData.createdTime\", // Or different field\n  },\n};\n```\n\n### Response Format\n\n```typescript\nexport interface PaginatedResults<DocType> {\n  docs: DocType[];\n  totalDocs: number;\n  limit: number;\n  hasPrevPage: boolean;\n  hasNextPage: boolean;\n  page: number;\n  totalPages: number;\n  offset: number;\n  prevPage: number;\n  nextPage: number;\n  pagingCounter: number;\n}\n```\n\n\n---\n\n## 📜 Available API Call Summary\n\n### **Messages**\n\n| API          | PATH                                                             | Request Interface | Response Interface         |\n| ------------ | ---------------------------------------------------------------- | ----------------- | -------------------------- |\n| Send Message | POST /messages                                                   | iSendMessageReq   | iSendMessageRes            |\n| Get Messages | GET /messages?<br />conversationId={CONVERSATION_ID}<br />&limit=50&offset=0 |                   | PaginatedResults<iMessage> |\n\n### **Contacts**\n\n| API                  | PATH                                              | Request Interface     | Response Interface         |\n| -------------------- | ------------------------------------------------- | --------------------- | -------------------------- |\n| Create Contact       | POST /contacts                                    | iCreateContactRequest | iContact                   |\n| Create or Update     | POST /contacts/create-or-update                   | iCreateContactRequest | iContact                   |\n| Query Contacts       | POST /contacts/query                              | iQueryConfig          | PaginatedResults<iContact> |\n| Get Contact By ID    | GET /contacts/{CONTACT_ID}                        |                       | iContact                   |\n| Edit Contact By ID   | PATCH /contacts/{CONTACT_ID}                      | Partial<iContact>     | iContact                   |\n| Delete Contact By ID | DELETE /contacts/{CONTACT_ID}<br />?confirmation=DELETE |                       | iActionSuccessRes          |\n| Find Contact         | POST /contacts/find                               | iContactResolverQuery | iContact[]                 |\n| Find or Create Contact | POST /contacts/find-or-create                     | iCreateContactRequest | iContact                 |\n\n### **Conversations**\n\n| API                          | PATH                                  | Request Interface           | Response Interface              |\n| ---------------------------- | ------------------------------------- | --------------------------- | ------------------------------- |\n| Query Conversations          | POST /conversations/query             | iQueryConfig                | PaginatedResults<iConversation> |\n| Send Message in Conversation | POST /conversations/{ID}/send-message | iConversationSendMessageReq | iMessage                        |\n\n### **Email Series**\n\n| API                         | PATH                                              | Request Interface        | Response Interface |\n| --------------------------- | ------------------------------------------------- | ------------------------ | ------------------ |\n| Add Contact to Email Series | POST /automation-workflows/{WORKFLOW_ID}/contacts | iAddContactToWorkflowReq | iActionSuccessRes  |\n\n\n### **Product Tours**\n\n| API                   | PATH                                        | Request Interface          | Response Interface |\n| --------------------- | ------------------------------------------- | -------------------------- | ------------------ |\n| Activate Product Tour | POST /screen-tours/{productTourId}/activate | iAddContactToScreenTourReq | iActionSuccessRes  |\n\n### **CheckLists**\n\n| API                | PATH                                    | Request Interface         | Response Interface |\n| ------------------ | --------------------------------------- | ------------------------- | ------------------ |\n| Activate CheckList | POST /checklists/{checkListId}/activate | iAddContactToCheckListReq | iActionSuccessRes  |\n\n---\n"
   },
   "servers": [
     {
-      "url": "http://sandbox.mintlify.com"
+      "url": "https://engine.clickconnector.app/api/v1",
+      "description": "Production server"
     }
   ],
   "security": [
     {
-      "bearerAuth": []
+      "BearerAuth": []
     }
   ],
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "Message": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "from": {
+            "$ref": "#/components/schemas/MessageFrom"
+          },
+          "message": {
+            "type": "string"
+          },
+          "metaData": {
+            "$ref": "#/components/schemas/MessageMetaData"
+          },
+          "isPrivate": {
+            "type": "boolean"
+          },
+          "isWhisper": {
+            "type": "boolean"
+          },
+          "isNotes": {
+            "type": "boolean"
+          },
+          "attachments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MessageAttachment"
+            }
+          },
+          "references": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "connectionId": {
+            "type": "string"
+          },
+          "connectionType": {
+            "type": "string"
+          },
+          "originRef": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object"
+          },
+          "isTemporary": {
+            "type": "boolean"
+          }
+        },
+        "example": {
+          "id": "d5af40-8132a-8ef0d-16a99",
+          "from": {
+            "senderType": "USER",
+            "id": "cc"
+          },
+          "message": "Message content",
+          "metaData": {
+            "sentAt": 1714899700003,
+            "deliveredAt": 1714899700003,
+            "fbMessageReference": "mid_12345"
+          },
+          "isPrivate": false,
+          "isWhisper": false,
+          "isNotes": false,
+          "attachments": [],
+          "references": [],
+          "connectionId": "12345",
+          "connectionType": "messenger",
+          "originRef": "origin_123",
+          "data": {},
+          "isTemporary": false
+        }
+      },
+      "SendMessageReq": {
+        "type": "object",
+        "properties": {
+          "connectionId": {
+            "type": "string",
+            "description": "The ID of the connection to which the message will be sent."
+          },
+          "contactIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "List of contact IDs to whom the message will be sent."
+          },
+          "subject": {
+            "type": "string",
+            "description": "The subject of the message (optional)."
+          },
+          "message": {
+            "type": "string",
+            "description": "The content of the message."
+          },
+          "attachments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "List of attachment URLs or IDs (optional)."
+          },
+          "cc": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "List of CC recipients (optional)."
+          },
+          "bcc": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "List of BCC recipients (optional)."
+          },
+          "to": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "List of TO recipients (optional)."
+          },
+          "messageData": {
+            "type": "object",
+            "description": "Additional data associated with the message (optional)."
+          }
+        },
+        "example": {
+          "connectionId": "demo01-37f11",
+          "contactIds": [
+            "demo01-46b74-768b7-11b2b"
+          ],
+          "subject": "Test Subject",
+          "message": "Test Message"
+        }
+      },
+      "SendMessageRes": {
+        "type": "object",
+        "properties": {
+          "messageId": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        },
+        "example": {
+          "success": true
+        }
+      },
+      "CreateContactRequest": {
+        "type": "object",
+        "properties": {
+          "firstName": {
+            "type": "string",
+            "description": "First name of the contact."
+          },
+          "lastName": {
+            "type": "string",
+            "description": "Last name of the contact."
+          },
+          "primaryEmail": {
+            "type": "string",
+            "description": "Primary email address of the contact."
+          },
+          "primaryMobile": {
+            "type": "string",
+            "description": "Primary mobile number of the contact."
+          },
+          "isStarred": {
+            "type": "boolean",
+            "description": "Indicates if the contact is starred."
+          },
+          "avatar": {
+            "type": "string",
+            "description": "URL to the contact's avatar."
+          },
+          "address": {
+            "$ref": "#/components/schemas/ContactAddress",
+            "description": "Address details of the contact."
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Tags associated with the contact."
+          },
+          "country": {
+            "type": "string",
+            "description": "Country of the contact."
+          },
+          "city": {
+            "type": "string",
+            "description": "City of the contact."
+          },
+          "ip": {
+            "type": "string",
+            "description": "IP address of the contact."
+          },
+          "device": {
+            "type": "object",
+            "description": "Device information of the contact."
+          },
+          "timezone": {
+            "type": "integer",
+            "description": "Timezone offset of the contact."
+          },
+          "locale": {
+            "type": "string",
+            "description": "Locale of the contact (e.g., en_GB)."
+          },
+          "gender": {
+            "type": "string",
+            "description": "Gender of the contact (e.g., male)."
+          },
+          "customProperties": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Custom properties of the contact."
+          },
+          "customUserId": {
+            "type": "string",
+            "description": "Custom user ID for the contact."
+          },
+          "notes": {
+            "type": "string",
+            "description": "Notes associated with the contact."
+          },
+          "preference": {
+            "$ref": "#/components/schemas/ContactPreference",
+            "description": "Preferences of the contact."
+          }
+        },
+        "description": "Request body for creating a new contact.",
+        "example": {
+          "firstName": "Ruban",
+          "lastName": "Test 2",
+          "primaryMobile": "+23054850668",
+          "primaryEmail": "demo@demo.com"
+        }
+      },
+      "ContactResolverQuery": {
+        "type": "object",
+        "properties": {
+          "customUserId": {
+            "type": "string",
+            "description": "The custom user ID for resolving a contact."
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "The email address for resolving a contact."
+          },
+          "mobile": {
+            "type": "string",
+            "description": "The mobile number for resolving a contact."
+          }
+        },
+        "description": "Query parameters used to find a contact based on various identifiers.",
+        "example": {
+          "email": "support@clickconnector.com"
+        }
+      },
+      "Contact": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the contact."
+          },
+          "organizationId": {
+            "type": "string",
+            "description": "ID of the organization the contact belongs to."
+          },
+          "owner": {
+            "type": "string",
+            "description": "ID of the owner of the contact."
+          },
+          "companyId": {
+            "type": "string",
+            "description": "ID of the company associated with the contact."
+          },
+          "data": {
+            "$ref": "#/components/schemas/ContactData",
+            "description": "Data associated with the contact."
+          },
+          "preference": {
+            "$ref": "#/components/schemas/ContactPreference",
+            "description": "Preferences of the contact."
+          },
+          "metaData": {
+            "$ref": "#/components/schemas/ContactMetaData",
+            "description": "Metadata of the contact."
+          }
+        },
+        "description": "Represents a contact in the system.",
+        "example": {
+          "id": "demo01-218ea-4457a-4ae17",
+          "organizationId": "demo01",
+          "owner": "owner01",
+          "companyId": "company01",
+          "data": {
+            "firstName": "Louie",
+            "lastName": "Smith",
+            "primaryEmail": "Louie.Smith@gmail.com",
+            "primaryMobile": "+94777616055",
+            "isStarred": false,
+            "avatar": "https://example.com/avatar.jpg",
+            "organization": "Example Corp",
+            "address": {
+              "city": "Los Angeles",
+              "country": "US"
+            },
+            "notes": [
+              "Important contact"
+            ],
+            "tags": [
+              "VIP"
+            ],
+            "country": "US",
+            "city": "Los Angeles",
+            "ip": "192.168.1.1",
+            "device": {},
+            "timezone": -8,
+            "locale": "en_US",
+            "gender": "male",
+            "customProperties": {
+              "customField1": "value1"
+            },
+            "landedPage": {
+              "url": "https://example.com",
+              "title": "Example Page"
+            },
+            "referer": {
+              "url": "https://referrer.com",
+              "title": "Referrer Page"
+            },
+            "customUserId": "custom_user_01"
+          },
+          "preference": {
+            "marketingConsentObtained": true,
+            "isUnsubscribed": false
+          },
+          "metaData": {
+            "createdTime": 1638030603565,
+            "isStarred": false,
+            "isVerified": true
+          }
+        }
+      },
+      "ContactData": {
+        "type": "object",
+        "properties": {
+          "firstName": {
+            "type": "string",
+            "description": "First name of the contact."
+          },
+          "lastName": {
+            "type": "string",
+            "description": "Last name of the contact."
+          },
+          "primaryEmail": {
+            "type": "string",
+            "description": "Primary email address of the contact."
+          },
+          "primaryMobile": {
+            "type": "string",
+            "description": "Primary mobile number of the contact."
+          },
+          "isStarred": {
+            "type": "boolean",
+            "description": "Indicates if the contact is starred."
+          },
+          "avatar": {
+            "type": "string",
+            "description": "URL to the contact's avatar."
+          },
+          "organization": {
+            "type": "string",
+            "description": "Organization the contact is associated with."
+          },
+          "address": {
+            "$ref": "#/components/schemas/ContactAddress",
+            "description": "Address details of the contact."
+          },
+          "notes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Notes associated with the contact."
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Tags associated with the contact."
+          },
+          "country": {
+            "type": "string",
+            "description": "Country of the contact."
+          },
+          "city": {
+            "type": "string",
+            "description": "City of the contact."
+          },
+          "ip": {
+            "type": "string",
+            "description": "IP address of the contact."
+          },
+          "device": {
+            "type": "object",
+            "description": "Device information of the contact."
+          },
+          "timezone": {
+            "type": "integer",
+            "description": "Timezone offset of the contact."
+          },
+          "locale": {
+            "type": "string",
+            "description": "Locale of the contact (e.g., en_GB)."
+          },
+          "gender": {
+            "type": "string",
+            "description": "Gender of the contact (e.g., male)."
+          },
+          "customProperties": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Custom properties of the contact."
+          },
+          "landedPage": {
+            "$ref": "#/components/schemas/PageData",
+            "description": "Information about the page where the contact landed."
+          },
+          "referer": {
+            "$ref": "#/components/schemas/PageData",
+            "description": "Information about the referring page."
+          },
+          "customUserId": {
+            "type": "string",
+            "description": "Custom user ID for the contact."
+          }
+        },
+        "description": "Data related to the contact."
+      },
+      "ContactPreference": {
+        "type": "object",
+        "properties": {
+          "marketingConsentObtained": {
+            "type": "boolean",
+            "description": "Indicates if marketing consent was obtained from the contact."
+          },
+          "isUnsubscribed": {
+            "type": "boolean",
+            "description": "Indicates if the contact has unsubscribed."
+          },
+          "unsubscribedReason": {
+            "type": "string",
+            "description": "Reason for unsubscribing."
+          }
+        },
+        "description": "Preferences related to the contact."
+      },
+      "ContactMetaData": {
+        "type": "object",
+        "properties": {
+          "createdTime": {
+            "type": "integer",
+            "description": "Timestamp when the contact was created."
+          },
+          "isStarred": {
+            "type": "boolean",
+            "description": "Indicates if the contact is starred."
+          },
+          "isVerified": {
+            "type": "boolean",
+            "description": "Indicates if the contact is verified."
+          }
+        },
+        "description": "Metadata related to the contact."
+      },
+      "ContactAddress": {
+        "type": "object",
+        "properties": {
+          "city": {
+            "type": "string",
+            "description": "City of the contact's address."
+          },
+          "country": {
+            "type": "string",
+            "description": "Country of the contact's address."
+          }
+        },
+        "description": "Address information for the contact."
+      },
+      "PageData": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "URL of the page."
+          },
+          "title": {
+            "type": "string",
+            "description": "Title of the page."
+          }
+        },
+        "description": "Data about a page."
+      },
+      "EntityQueryReq": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "object"
+          },
+          "options": {
+            "$ref": "#/components/schemas/PaginatedOptions"
+          }
+        },
+        "example": {
+          "query": null,
+          "options": {
+            "page": 1,
+            "limit": 20,
+            "sort": "name"
+          }
+        }
+      },
+      "Conversation": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "organizationId": {
+            "type": "string"
+          },
+          "contactId": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "id": "d5af40-4e99b-76a3c-874af-6bbf9",
+          "organizationId": "d5af40",
+          "contactId": "d5af40-c75df-61f3c-ffb06",
+          "createdAt": "2023-07-19T16:39:57Z"
+        }
+      },
+      "ConversationSendMessageReq": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "The content of the message to be sent in the conversation."
+          },
+          "attachments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Optional list of attachment IDs to include with the message."
+          },
+          "cc": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Optional list of email addresses to be included in the CC field."
+          },
+          "bcc": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Optional list of email addresses to be included in the BCC field."
+          },
+          "to": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Optional list of recipient email addresses."
+          },
+          "subject": {
+            "type": "string",
+            "description": "Optional subject of the message."
+          },
+          "isPrivate": {
+            "type": "boolean",
+            "description": "Optional flag to indicate if the message is private."
+          }
+        },
+        "description": "Request payload for sending a message within a conversation.",
+        "example": {
+          "message": "Hello World"
+        }
+      },
+      "AddContactToScreenTourReq": {
+        "type": "object",
+        "description": "This request is used to add contacts to a product tour. The provided contact IDs will be associated with a specific product tour for activation.\n",
+        "properties": {
+          "contactIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "A list of contact IDs to add to the product tour.",
+            "example": [
+              "xxxxx-xxxxx-xxxxxx",
+              "xxxxx-xxxxx-xxxxxx"
+            ]
+          },
+          "connectionId": {
+            "type": "string",
+            "description": "The connection ID that identifies the communication channel for this product tour activation.",
+            "example": "xxxxx-xxxxx-xxxxxx"
+          }
+        },
+        "required": [
+          "contactIds",
+          "connectionId"
+        ]
+      },
+      "AddContactToCheckListReq": {
+        "type": "object",
+        "description": "This request is used to add contacts to a checklist. The provided contact IDs will be associated with a specific checklist for activation.\n",
+        "properties": {
+          "contactIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "A list of contact IDs to add to the checklist.",
+            "example": [
+              "xxxxx-xxxxx-xxxxxx",
+              "xxxxx-xxxxx-xxxxxx"
+            ]
+          },
+          "connectionId": {
+            "type": "string",
+            "description": "The connection ID that identifies the communication channel for this checklist activation.",
+            "example": "xxxxx-xxxxx-xxxxxx"
+          }
+        },
+        "required": [
+          "contactIds",
+          "connectionId"
+        ]
+      },
+      "PaginatedOptions": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer"
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "sort": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "page": 1,
+          "limit": 20,
+          "sort": "name"
+        }
+      },
+      "PaginatedResults": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Contact"
+            }
+          }
+        },
+        "example": {
+          "total": 100,
+          "page": 1,
+          "limit": 20,
+          "results": []
+        }
+      },
+      "ActionSuccessRes": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          }
+        },
+        "example": {
+          "success": true
+        }
+      },
+      "MessageFrom": {
+        "type": "object",
+        "properties": {
+          "senderType": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "senderType": "USER",
+          "id": "cc"
+        }
+      },
+      "MessageMetaData": {
+        "type": "object",
+        "properties": {
+          "sentAt": {
+            "type": "integer"
+          },
+          "deliveredAt": {
+            "type": "integer"
+          },
+          "fbMessageReference": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "sentAt": 1714899700003,
+          "deliveredAt": 1714899700003,
+          "fbMessageReference": "mid_12345"
+        }
+      },
+      "MessageAttachment": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "payload": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {}
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "object",
+                    "properties": {
+                      "url": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "application/pdf",
+                      "image/jpeg",
+                      "image/png",
+                      "file"
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "example": {
+          "type": "application/pdf",
+          "payload": {
+            "file": {
+              "url": "https://example.com/file.pdf"
+            },
+            "type": "application/pdf"
+          }
+        }
+      },
+      "PaginatedResultsConversation": {
+        "type": "object",
+        "properties": {
+          "docs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Conversation"
+            },
+            "description": "List of conversation documents."
+          },
+          "totalDocs": {
+            "type": "integer",
+            "description": "Total number of documents available."
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Number of documents per page."
+          },
+          "hasPrevPage": {
+            "type": "boolean",
+            "description": "Indicates if there is a previous page."
+          },
+          "hasNextPage": {
+            "type": "boolean",
+            "description": "Indicates if there is a next page."
+          },
+          "page": {
+            "type": "integer",
+            "description": "Current page number."
+          },
+          "totalPages": {
+            "type": "integer",
+            "description": "Total number of pages."
+          },
+          "offset": {
+            "type": "integer",
+            "description": "The offset from which the documents were retrieved."
+          },
+          "prevPage": {
+            "type": "integer",
+            "description": "The previous page number."
+          },
+          "nextPage": {
+            "type": "integer",
+            "description": "The next page number."
+          },
+          "pagingCounter": {
+            "type": "integer",
+            "description": "The counter of the documents on the current page."
+          }
+        },
+        "description": "Paginated results for conversations.",
+        "example": {
+          "docs": [
+            {
+              "id": "demo01-08638-4c277-937e5-4e580",
+              "organizationId": "demo01",
+              "connectionId": "demo01-53a6d",
+              "connectionType": "WEB_CHAT",
+              "contactId": "demo01-afff8-8e48c-582ab",
+              "data": {
+                "campaignMessage": {
+                  "text": "Hey there 👋, How can we help you?",
+                  "timestamp": 1656505125069,
+                  "inviteeId": "1",
+                  "additionalMessages": []
+                },
+                "startedPage": "https://widget.clickconnector.app/demo/travel/",
+                "referencePage": "",
+                "landedPage": {
+                  "url": "https://widget.clickconnector.app/demo/travel/",
+                  "title": "Exploore | Home Default"
+                },
+                "referer": null,
+                "sessionId": "demo01-82468-1e999"
+              },
+              "priority": 5,
+              "subject": "Conversation with visitor",
+              "status": "OPEN",
+              "tags": [],
+              "members": [],
+              "metaData": {
+                "createdAt": 1656505125547,
+                "isActive": true,
+                "lastMessage": {
+                  "text": "I have a question",
+                  "timestamp": 1656505126709,
+                  "client": 1656505126709,
+                  "team": 1656505125069,
+                  "isByClient": true,
+                  "reminderNotificationSent": false
+                },
+                "totalMessages": 2,
+                "objectCreatedAt": 1656505125552,
+                "duration": 1180,
+                "firstResponseTime": 0
+              },
+              "contact": {
+                "data": {
+                  "firstName": "Anonymous",
+                  "notes": [],
+                  "tags": []
+                }
+              }
+            },
+            {
+              "id": "demo01-09f3f-f83dd-d79f4-be632",
+              "organizationId": "demo01",
+              "connectionId": "demo01-53a6d",
+              "connectionType": "WEB_CHAT",
+              "contactId": "demo01-dde77-7a519-18e1c",
+              "data": {
+                "campaignMessage": {
+                  "text": "Hey there 👋, How can we help you?",
+                  "timestamp": 1656505104786,
+                  "inviteeId": "1",
+                  "additionalMessages": []
+                },
+                "startedPage": "https://widget.clickconnector.app/demo/travel/",
+                "referencePage": "",
+                "landedPage": {
+                  "url": "https://widget.clickconnector.app/demo/travel/",
+                  "title": "Exploore | Home Default"
+                },
+                "referer": null,
+                "sessionId": "demo01-91477-3f833"
+              },
+              "priority": 5,
+              "subject": "Conversation with visitor",
+              "status": "OPEN",
+              "tags": [],
+              "members": [
+                {
+                  "userId": "demo01-a2bb6",
+                  "joinedTime": 1656505110145
+                }
+              ],
+              "metaData": {
+                "createdAt": 1656505105347,
+                "isActive": true,
+                "lastMessage": {
+                  "text": "I have a question",
+                  "timestamp": 1656505106384,
+                  "client": 1656505106384,
+                  "team": 1656505104786,
+                  "isByClient": true,
+                  "reminderNotificationSent": false
+                },
+                "totalMessages": 2,
+                "objectCreatedAt": 1656505105352,
+                "duration": 1048,
+                "firstResponseTime": 0
+              },
+              "contact": {
+                "data": {
+                  "firstName": "Anonymous",
+                  "notes": [],
+                  "tags": []
+                }
+              }
+            }
+          ],
+          "totalDocs": 2,
+          "limit": 2,
+          "hasPrevPage": false,
+          "hasNextPage": false,
+          "page": 1,
+          "totalPages": 1,
+          "offset": 0,
+          "prevPage": null,
+          "nextPage": null,
+          "pagingCounter": 1
+        }
+      },
+      "PaginatedResultsMessage": {
+        "type": "object",
+        "properties": {
+          "docs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Message"
+            },
+            "description": "List of message documents."
+          },
+          "totalDocs": {
+            "type": "integer",
+            "description": "Total number of documents available."
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Number of documents per page."
+          },
+          "hasPrevPage": {
+            "type": "boolean",
+            "description": "Indicates if there is a previous page."
+          },
+          "hasNextPage": {
+            "type": "boolean",
+            "description": "Indicates if there is a next page."
+          },
+          "page": {
+            "type": "integer",
+            "description": "Current page number."
+          },
+          "totalPages": {
+            "type": "integer",
+            "description": "Total number of pages."
+          },
+          "offset": {
+            "type": "integer",
+            "description": "The offset from which the documents were retrieved."
+          },
+          "prevPage": {
+            "type": "integer",
+            "description": "The previous page number."
+          },
+          "nextPage": {
+            "type": "integer",
+            "description": "The next page number."
+          },
+          "pagingCounter": {
+            "type": "integer",
+            "description": "The counter of the documents on the current page."
+          }
+        },
+        "description": "Paginated results for messages.",
+        "example": {
+          "docs": [
+            {
+              "id": "d5af40-8132a-8ef0d-16a99",
+              "organizationId": "d5af40",
+              "contactId": "d5af40-c75df-61f3c-ffb06",
+              "conversationId": "d5af40-4e99b-76a3c-874af-6bbf9",
+              "from": {
+                "senderType": "SYSTEM",
+                "id": "SYSTEM"
+              },
+              "message": "Chat is being routed. An available agent will join shortly",
+              "isPrivate": false,
+              "attachments": [],
+              "references": [],
+              "connectionId": "d5af40-35f4c",
+              "connectionType": "WEB_CHAT",
+              "metaData": {
+                "sentAt": 1714899700003,
+                "deliveredAt": 1714899700003
+              }
+            },
+            {
+              "id": "d5af40-13db9-7a0b6-6f78e",
+              "organizationId": "d5af40",
+              "contactId": "d5af40-c75df-61f3c-ffb06",
+              "conversationId": "d5af40-4e99b-76a3c-874af-6bbf9",
+              "from": {
+                "senderType": "CLIENT",
+                "id": "d5af40-c75df-61f3c-ffb06"
+              },
+              "message": "hello",
+              "isPrivate": false,
+              "attachments": [],
+              "references": [],
+              "connectionId": "d5af40-35f4c",
+              "connectionType": "WEB_CHAT",
+              "metaData": {
+                "sentAt": 1714899698581,
+                "deliveredAt": 1714899698581
+              }
+            },
+            {
+              "id": "d5af40-8b635-a3e38-191de",
+              "organizationId": "d5af40",
+              "contactId": "d5af40-c75df-61f3c-ffb06",
+              "conversationId": "d5af40-4e99b-76a3c-874af-6bbf9",
+              "from": {
+                "senderType": "USER",
+                "id": "cc"
+              },
+              "message": "Hey there 👋, How can we help you?",
+              "isPrivate": false,
+              "attachments": [],
+              "references": [],
+              "connectionId": "d5af40-35f4c",
+              "connectionType": "WEB_CHAT",
+              "metaData": {
+                "sentAt": 1714899698392,
+                "deliveredAt": 1714899698392
+              }
+            }
+          ],
+          "totalDocs": 3,
+          "limit": 3,
+          "hasPrevPage": false,
+          "hasNextPage": false,
+          "page": 1,
+          "totalPages": 1,
+          "offset": 0,
+          "prevPage": null,
+          "nextPage": null,
+          "pagingCounter": 1
+        }
+      },
+      "PaginatedResultsContact": {
+        "type": "object",
+        "properties": {
+          "docs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Contact"
+            },
+            "description": "List of contact documents."
+          },
+          "totalDocs": {
+            "type": "integer",
+            "description": "Total number of documents available."
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Number of documents per page."
+          },
+          "hasPrevPage": {
+            "type": "boolean",
+            "description": "Indicates if there is a previous page."
+          },
+          "hasNextPage": {
+            "type": "boolean",
+            "description": "Indicates if there is a next page."
+          },
+          "page": {
+            "type": "integer",
+            "description": "Current page number."
+          },
+          "totalPages": {
+            "type": "integer",
+            "description": "Total number of pages."
+          },
+          "offset": {
+            "type": "integer",
+            "description": "The offset from which the documents were retrieved."
+          },
+          "prevPage": {
+            "type": "integer",
+            "description": "The previous page number."
+          },
+          "nextPage": {
+            "type": "integer",
+            "description": "The next page number."
+          },
+          "pagingCounter": {
+            "type": "integer",
+            "description": "The counter of the documents on the current page."
+          }
+        },
+        "description": "Paginated results for contacts.",
+        "example": {
+          "docs": [
+            {
+              "id": "demo01-218ea-4457a-4ae17",
+              "organizationId": "demo01",
+              "data": {
+                "firstName": "Louie",
+                "lastName": "Smith",
+                "notes": [],
+                "tags": [],
+                "country": "TO",
+                "primaryEmail": "Louie.Smith@gmail.com",
+                "primaryMobile": "+94777616055"
+              },
+              "metaData": {
+                "createdTime": 1638030603565,
+                "isVerified": true,
+                "isStarred": false
+              }
+            },
+            {
+              "id": "demo01-9452d-3c259-c2bf3",
+              "organizationId": "demo01",
+              "data": {
+                "firstName": "Devin",
+                "lastName": "Simonis",
+                "notes": [],
+                "tags": [],
+                "country": "AX",
+                "primaryEmail": "Devin1@yahoo.com",
+                "primaryMobile": "+94777481922"
+              },
+              "metaData": {
+                "createdTime": 1638072078611,
+                "isVerified": true
+              }
+            }
+          ],
+          "totalDocs": 2,
+          "limit": 2,
+          "hasPrevPage": false,
+          "hasNextPage": false,
+          "page": 1,
+          "totalPages": 1,
+          "offset": 0,
+          "prevPage": null,
+          "nextPage": null,
+          "pagingCounter": 1
+        }
+      }
+    }
+  },
   "paths": {
-    "/plants": {
+    "/messages": {
+      "post": {
+        "tags": [
+          "Messages"
+        ],
+        "summary": "Start a conversation with a message",
+        "description": "Start a conversation with a message with contactId.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendMessageReq"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully sent message",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendMessageRes"
+                }
+              }
+            }
+          }
+        }
+      },
       "get": {
-        "description": "Returns all plants from the system that the user has access to",
+        "tags": [
+          "Messages"
+        ],
+        "summary": "Get messages of a conversation",
+        "description": "Retrieves messages for a given conversation ID, with pagination support.",
         "parameters": [
+          {
+            "name": "conversationId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The ID of the conversation to fetch messages for."
+          },
           {
             "name": "limit",
             "in": "query",
-            "description": "The maximum number of results to return",
+            "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32"
-            }
+              "default": 50
+            },
+            "description": "The number of messages to fetch."
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0
+            },
+            "description": "The offset for pagination."
           }
         ],
         "responses": {
           "200": {
-            "description": "Plant response",
+            "description": "Successfully fetched messages",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResultsMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/contacts": {
+      "post": {
+        "tags": [
+          "Contacts"
+        ],
+        "summary": "Create contact",
+        "description": "Creates a new contact with the specified details. See the Schema for all supported fields. If primary identifier such as primaryEmail or primaryMobile, an error will be thrown.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateContactRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully created contact",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Contact"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/contacts/create-or-update": {
+      "post": {
+        "tags": [
+          "Contacts"
+        ],
+        "summary": "Create or update contact",
+        "description": "Creates a new contact or updates an existing one based on the provided details.  See the Schema for all supported fields",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateContactRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully created or updated contact",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Contact"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/contacts/find-or-create": {
+      "post": {
+        "tags": [
+          "Contacts"
+        ],
+        "summary": "Find or Create a Contact",
+        "description": "This endpoint allows you to find an existing contact or create a new one based on the provided details.",
+        "operationId": "findOrCreateContact",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateContactRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully found or created the contact.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Contact"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/contacts/query": {
+      "post": {
+        "tags": [
+          "Contacts"
+        ],
+        "summary": "Query contacts",
+        "description": "Queries contacts based on provided query configurations. All Query API calls are made using the POST method. You need to send a Query Request Object in the JSON body of your requests. ClickConnector is fully compatible with the Mongo Query Language. Learn more about Mongo Query Language [here](https://www.mongodb.com/docs/manual/tutorial/query-documents/).\n",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntityQueryReq"
+              },
+              "examples": {
+                "example1": {
+                  "summary": "Query contacts created between two dates",
+                  "value": {
+                    "query": {
+                      "metaData.createdTime": {
+                        "$gte": 1719772200000,
+                        "$lt": 1720722599999
+                      }
+                    },
+                    "options": {
+                      "page": 1,
+                      "limit": 20,
+                      "sort": "-metaData.createdTime"
+                    }
+                  }
+                },
+                "example2": {
+                  "summary": "Query contacts by tags",
+                  "value": {
+                    "query": {
+                      "data.tags": {
+                        "$in": [
+                          "VIP"
+                        ]
+                      }
+                    },
+                    "options": {
+                      "page": 1,
+                      "limit": 20,
+                      "sort": "-metaData.createdTime"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully queried contacts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResultsContact"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/contacts/{CONTACT_ID}": {
+      "get": {
+        "tags": [
+          "Contacts"
+        ],
+        "summary": "Get contact by ID",
+        "description": "Retrieves details of a contact by its ID.",
+        "parameters": [
+          {
+            "name": "CONTACT_ID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The ID of the contact to fetch details for."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully fetched contact details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Contact"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Contacts"
+        ],
+        "summary": "Edit contact by ID",
+        "description": "Updates the details of a contact by its ID.",
+        "parameters": [
+          {
+            "name": "CONTACT_ID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The ID of the contact to update."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Contact"
+              },
+              "examples": {
+                "example1": {
+                  "summary": "Edit contact's last name",
+                  "value": {
+                    "data.lastName": "Thomas"
+                  }
+                },
+                "example2": {
+                  "summary": "Edit contact's mobile number",
+                  "value": {
+                    "data.primaryMobile": "+23054850668"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully updated contact",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Contact"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Contacts"
+        ],
+        "summary": "Delete contact by ID",
+        "description": "Deletes a contact by its ID, requires confirmation to prevent accidental deletion.",
+        "parameters": [
+          {
+            "name": "CONTACT_ID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The ID of the contact to delete."
+          },
+          {
+            "name": "confirmation",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "CONFIRM"
+              ]
+            },
+            "description": "Confirmation to proceed with deletion."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully deleted contact",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionSuccessRes"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/contacts/find": {
+      "post": {
+        "tags": [
+          "Contacts"
+        ],
+        "summary": "Find contact",
+        "description": "Finds contacts based on the specified query. Supported Query fields: email, mobile, customUserId\n",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContactResolverQuery"
+              },
+              "examples": {
+                "example1": {
+                  "summary": "Find contact by email",
+                  "value": {
+                    "email": "support@clickconnector.com"
+                  }
+                },
+                "example2": {
+                  "summary": "Find contact by custom user ID",
+                  "value": {
+                    "customUserId": "xxxxxxxxx"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully found contacts",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/Plant"
+                    "$ref": "#/components/schemas/Contact"
                   }
                 }
               }
             }
-          },
-          "400": {
-            "description": "Unexpected error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
           }
         }
-      },
+      }
+    },
+    "/conversations/query": {
       "post": {
-        "description": "Creates a new plant in the store",
+        "tags": [
+          "Conversations"
+        ],
+        "summary": "Query conversations",
+        "description": "Queries conversations based on provided query configurations. All Query API calls are made using the POST method. You need to send a Query Request Object in the JSON body of your requests. ClickConnector is fully compatible with the Mongo Query Language. Learn more about Mongo Query Language [here](https://www.mongodb.com/docs/manual/tutorial/query-documents/).\n",
         "requestBody": {
-          "description": "Plant to add to the store",
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/NewPlant"
+                "$ref": "#/components/schemas/EntityQueryReq"
+              },
+              "examples": {
+                "example1": {
+                  "summary": "Query conversations started between two dates",
+                  "value": {
+                    "query": {
+                      "metaData.createdAt": {
+                        "$gte": 1720463400000,
+                        "$lt": 1721413799999
+                      },
+                      "status": "OPEN"
+                    },
+                    "options": {
+                      "page": 1,
+                      "limit": 20,
+                      "sort": "-metaData.lastMessage.timestamp"
+                    }
+                  }
+                },
+                "example2": {
+                  "summary": "Query conversations by tags",
+                  "value": {
+                    "query": {
+                      "tags": {
+                        "$in": [
+                          "Sale"
+                        ]
+                      },
+                      "status": "OPEN"
+                    },
+                    "options": {
+                      "page": 1,
+                      "limit": 20,
+                      "sort": "-metaData.lastMessage.timestamp"
+                    }
+                  }
+                },
+                "example3": {
+                  "summary": "Query conversations by last message timestamp range",
+                  "value": {
+                    "query": {
+                      "metaData.lastMessage.timestamp": {
+                        "$gte": 1720463400000,
+                        "$lt": 1721413799999
+                      },
+                      "status": "OPEN"
+                    },
+                    "options": {
+                      "page": 1,
+                      "limit": 20,
+                      "sort": "-metaData.lastMessage.timestamp"
+                    }
+                  }
+                },
+                "example4": {
+                  "summary": "Query unassigned open chats",
+                  "value": {
+                    "query": {
+                      "members": {
+                        "$size": 0
+                      },
+                      "status": "OPEN",
+                      "activeBot": {
+                        "$in": [
+                          null,
+                          ""
+                        ]
+                      }
+                    },
+                    "options": {
+                      "page": 1,
+                      "limit": 20,
+                      "sort": "-metaData.lastMessage.timestamp"
+                    }
+                  }
+                }
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
-            "description": "plant response",
+            "description": "Successfully queried conversations",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Plant"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "unexpected error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "$ref": "#/components/schemas/PaginatedResultsConversation"
                 }
               }
             }
@@ -96,99 +1755,229 @@
         }
       }
     },
-    "/plants/{id}": {
-      "delete": {
-        "description": "Deletes a single plant based on the ID supplied",
+    "/conversations/{ID}/send-message": {
+      "post": {
+        "tags": [
+          "Conversations"
+        ],
+        "summary": "Send message in conversation",
+        "description": "Sends a message in a specified conversation.",
         "parameters": [
           {
-            "name": "id",
+            "name": "ID",
             "in": "path",
-            "description": "ID of plant to delete",
             "required": true,
             "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
+              "type": "string"
+            },
+            "description": "The ID of the conversation to send the message in."
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConversationSendMessageReq"
+              },
+              "examples": {
+                "example1": {
+                  "summary": "Send a simple message in a conversation",
+                  "value": {
+                    "message": "Hello World"
+                  }
+                },
+                "example2": {
+                  "summary": "Send a message with additional details",
+                  "value": {
+                    "message": "Hello Team",
+                    "attachments": [
+                      "attachment1",
+                      "attachment2"
+                    ],
+                    "cc": [
+                      "cc@example.com"
+                    ],
+                    "bcc": [
+                      "bcc@example.com"
+                    ],
+                    "to": [
+                      "recipient@example.com"
+                    ],
+                    "subject": "Meeting Reminder",
+                    "isPrivate": true
+                  }
+                }
+              }
+            }
+          }
+        },
         "responses": {
-          "204": {
-            "description": "Plant deleted",
-            "content": {}
-          },
-          "400": {
-            "description": "unexpected error",
+          "200": {
+            "description": "Successfully sent message in conversation",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "$ref": "#/components/schemas/Message"
                 }
               }
             }
           }
         }
       }
-    }
-  },
-  "components": {
-    "schemas": {
-      "Plant": {
-        "required": [
-          "name"
+    },
+    "/automation-workflows/{WORKFLOW_ID}/contacts": {
+      "post": {
+        "tags": [
+          "Email Series"
         ],
-        "type": "object",
-        "properties": {
-          "name": {
-            "description": "The name of the plant",
-            "type": "string"
-          },
-          "tag": {
-            "description": "Tag to specify the type",
-            "type": "string"
+        "summary": "Add contact to email series",
+        "description": "Adds a contact to a specified email series workflow.",
+        "parameters": [
+          {
+            "name": "WORKFLOW_ID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The ID of the workflow to add the contact to."
           }
-        }
-      },
-      "NewPlant": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/Plant"
-          },
-          {
-            "required": [
-              "id"
-            ],
-            "type": "object",
-            "properties": {
-              "id": {
-                "description": "Identification number of the plant",
-                "type": "integer",
-                "format": "int64"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddContactToWorkflowReq"
+              },
+              "examples": {
+                "example1": {
+                  "summary": "Add a single contact to an email series",
+                  "value": {
+                    "contactIds": [
+                      "xxxxx-xxxxx"
+                    ]
+                  }
+                },
+                "example2": {
+                  "summary": "Add multiple contacts to an email series",
+                  "value": {
+                    "contactIds": [
+                      "contact1-id",
+                      "contact2-id",
+                      "contact3-id"
+                    ]
+                  }
+                }
               }
             }
           }
-        ]
-      },
-      "Error": {
-        "required": [
-          "error",
-          "message"
-        ],
-        "type": "object",
-        "properties": {
-          "error": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "message": {
-            "type": "string"
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully added contact to email series",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionSuccessRes"
+                }
+              }
+            }
           }
         }
       }
     },
-    "securitySchemes": {
-      "bearerAuth": {
-        "type": "http",
-        "scheme": "bearer"
+    "/screen-tours/{productTourId}/activate": {
+      "post": {
+        "tags": [
+          "Product Tours"
+        ],
+        "summary": "Activate Product Tour",
+        "description": "This endpoint activates a specified product tour by its ID, allowing users to initiate the tour for their organization.",
+        "operationId": "activateProductTour",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "productTourId",
+            "required": true,
+            "description": "The unique identifier for the product tour to activate.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddContactToScreenTourReq"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully activated the product tour.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionSuccessRes"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/checklists/{checkListId}/activate": {
+      "post": {
+        "tags": [
+          "CheckLists"
+        ],
+        "summary": "Activate CheckList",
+        "description": "This endpoint activates a specified checklist by its ID, allowing users to initiate the checklist for their organization.",
+        "operationId": "activateCheckList",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "checkListId",
+            "required": true,
+            "description": "The unique identifier for the checklist to activate.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddContactToCheckListReq"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully activated the checklist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionSuccessRes"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input or missing checklist ID."
+          },
+          "404": {
+            "description": "Not Found - Checklist not found."
+          }
+        }
       }
     }
   }
